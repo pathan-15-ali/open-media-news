@@ -76,6 +76,9 @@ class GlobalCoverageApp {
   constructor() {
     this.currentHeroIndex = 0;
     this.currentHeroPage = 0;
+    this.heroFlipInProgress = false;
+    this.heroRenderPending = false;
+    this.heroFlipTimer = null;
     this.currentTrendingIndex = 0;
     this.currentPage = 'home';
     this.libraryView = 'saved';
@@ -274,6 +277,7 @@ class GlobalCoverageApp {
       const now = new Date();
       const dateEl = document.getElementById('current-date');
       const clockText = document.getElementById('ist-clock-text');
+      const analogClock = document.querySelector('.analog-clock');
 
       // IST format: Asia/Kolkata timezone with 12-hour AM/PM
       const istTimeStr = now.toLocaleTimeString('en-US', {
@@ -283,12 +287,22 @@ class GlobalCoverageApp {
         second: '2-digit',
         hour12: true
       });
+      const istTimeParts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+      }).formatToParts(now);
+      const timePart = (type) => Number(istTimeParts.find((part) => part.type === type)?.value || 0);
+      const hours = timePart('hour') % 12;
+      const minutes = timePart('minute');
+      const seconds = timePart('second');
 
       const istDateStr = now.toLocaleDateString('en-US', {
         timeZone: 'Asia/Kolkata',
         weekday: 'long',
-        year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: 'numeric'
       });
 
@@ -297,6 +311,11 @@ class GlobalCoverageApp {
       }
       if (dateEl) {
         dateEl.textContent = istDateStr;
+      }
+      if (analogClock) {
+        analogClock.querySelector('.analog-clock-hour').style.transform = `rotate(${hours * 30 + minutes * 0.5 + seconds * (0.5 / 60)}deg)`;
+        analogClock.querySelector('.analog-clock-minute').style.transform = `rotate(${minutes * 6 + seconds * 0.1}deg)`;
+        analogClock.querySelector('.analog-clock-second').style.transform = `rotate(${seconds * 6}deg)`;
       }
     };
     updateClock();
@@ -653,6 +672,7 @@ class GlobalCoverageApp {
       this.renderBusinessHighlights();
       this.renderCyberAlerts();
       this.renderAIHighlights();
+      if (this.currentPage === 'ai') this.renderAIPage();
     }
   }
 
@@ -1675,25 +1695,53 @@ class GlobalCoverageApp {
 
   // --- Homepage Hero Carousel + Side Trending Panel ---
   renderHero() {
+    if (this.heroFlipInProgress) {
+      this.heroRenderPending = true;
+      return;
+    }
+
     const heroes = this.getHomeHeroStories();
     const hero = heroes[this.currentHeroIndex] || heroes[0];
     const container = document.getElementById('hero-main-card');
     if (!container || !hero) return;
-    const catSlug = this.categorySlug(hero.category);
     const user = this.getCurrentUser();
 
     container.innerHTML = `
-      <div class="hero-image-box" id="hero-image-box">
+      <div class="hero-page-content">${this.heroPageMarkup(hero, this.currentHeroIndex, heroes.length, user)}</div>
+      <div class="hero-carousel-controls">
+        <button class="hero-nav-btn" data-hero-control onclick="app.prevHeroStory(true)" aria-label="Previous story">
+          <i data-lucide="arrow-left"></i> Previous
+        </button>
+        <div class="hero-dots">
+          ${heroes.map((_, i) => `<button class="hero-dot ${i === this.currentHeroIndex ? 'active' : ''}" data-hero-control onclick="app.goToHeroStory(${i})" aria-label="Go to story ${i + 1}"></button>`).join('')}
+        </div>
+        <button class="hero-nav-btn" data-hero-control onclick="app.nextHeroStory(true)" aria-label="Next story">
+          Next <i data-lucide="arrow-right"></i>
+        </button>
+      </div>
+    `;
+
+    this.setupHeroSwipe();
+    this.setupHeroHoverPause();
+    this.renderSideTrendingPanel();
+    this.renderEditorPicks();
+    this.refreshIcons(container);
+  }
+
+  heroPageMarkup(hero, index, total, user) {
+    const catSlug = this.categorySlug(hero.category);
+    return `
+      <div class="hero-image-box">
         <img src="${hero.image}" alt="${hero.title}" loading="eager">
       </div>
       <div class="hero-top-bar">
         <span class="category-tag cat-${catSlug}">${hero.category}</span>
         <div class="hero-top-right">
           <span class="hero-live-badge"><span></span> Live Pulse</span>
-          <span class="hero-page-count" id="hero-page-count">${String(this.currentHeroIndex + 1).padStart(2, '0')} / ${String(heroes.length).padStart(2, '0')}</span>
+          <span class="hero-page-count">${String(index + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</span>
         </div>
       </div>
-      <div class="hero-body" id="hero-body-content">
+      <div class="hero-body">
         <h1 class="hero-title" onclick="app.openArticleModal('${hero.id}')" style="cursor:pointer;" title="Read full story">${hero.title}</h1>
         <p class="hero-desc">${hero.description}</p>
         <div class="hero-meta-row">
@@ -1709,83 +1757,59 @@ class GlobalCoverageApp {
           </div>
         </div>
       </div>
-      <div class="hero-carousel-controls">
-        <button class="hero-nav-btn" onclick="app.prevHeroStory(true)" aria-label="Previous story">
-          <i data-lucide="arrow-left"></i> Previous
-        </button>
-        <div class="hero-dots">
-          ${heroes.map((_, i) => `<button class="hero-dot ${i === this.currentHeroIndex ? 'active' : ''}" onclick="app.goToHeroStory(${i})" aria-label="Go to story ${i + 1}"></button>`).join('')}
-        </div>
-        <button class="hero-nav-btn" onclick="app.nextHeroStory(true)" aria-label="Next story">
-          Next <i data-lucide="arrow-right"></i>
-        </button>
-      </div>
     `;
-
-    this.setupHeroSwipe();
-    this.setupHeroHoverPause();
-    this.renderSideTrendingPanel();
-    this.renderEditorPicks();
-    this.refreshIcons(container);
   }
 
   flipHeroToStory(newIndex, direction) {
+    if (this.heroFlipInProgress) return;
+
     const heroes = this.getHomeHeroStories();
     const hero = heroes[newIndex];
     const container = document.getElementById('hero-main-card');
-    if (!container || !hero) return;
+    const page = container?.querySelector('.hero-page-content');
+    if (!container || !page || !hero || newIndex === this.currentHeroIndex) return;
+
+    this.heroFlipInProgress = true;
+    this.heroRenderPending = false;
+    container.querySelectorAll('[data-hero-control]').forEach((control) => {
+      control.disabled = true;
+    });
+
+    const turningPage = page.cloneNode(true);
+    turningPage.classList.add('hero-turn-page', direction > 0 ? 'hero-turn-forward' : 'hero-turn-backward');
+    turningPage.setAttribute('aria-hidden', 'true');
+    turningPage.querySelectorAll('[id]').forEach((element) => element.removeAttribute('id'));
+    container.appendChild(turningPage);
 
     this.currentHeroIndex = newIndex;
-    const catSlug = this.categorySlug(hero.category);
-    const user = this.getCurrentUser();
+    page.innerHTML = this.heroPageMarkup(hero, newIndex, heroes.length, this.getCurrentUser());
+    this.refreshIcons(page);
 
-    const imgBox = container.querySelector('.hero-image-box');
-    const heroBody = container.querySelector('#hero-body-content');
-    const topBar = container.querySelector('.hero-top-bar');
+    let completed = false;
+    const finishFlip = () => {
+      if (completed) return;
+      completed = true;
+      clearTimeout(this.heroFlipTimer);
+      turningPage.removeEventListener('animationend', onAnimationEnd);
+      turningPage.remove();
+      container.querySelectorAll('[data-hero-control]').forEach((control) => {
+        control.disabled = false;
+      });
+      container.querySelectorAll('.hero-dot').forEach((dot, index) => {
+        dot.classList.toggle('active', index === this.currentHeroIndex);
+      });
+      this.heroFlipInProgress = false;
+      if (this.heroRenderPending) this.renderHero();
+    };
+    const onAnimationEnd = (event) => {
+      if (event.target === turningPage) finishFlip();
+    };
 
-    if (imgBox && heroBody) {
-      imgBox.style.opacity = '0.2';
-      heroBody.style.opacity = '0';
-      heroBody.style.transform = `translateX(${direction > 0 ? '16px' : '-16px'})`;
-
-      setTimeout(() => {
-        imgBox.innerHTML = `<img src="${hero.image}" alt="${hero.title}" loading="eager">`;
-        if (topBar) {
-          topBar.innerHTML = `
-            <span class="category-tag cat-${catSlug}">${hero.category}</span>
-            <div class="hero-top-right">
-              <span class="hero-live-badge"><span></span> Live Pulse</span>
-              <span class="hero-page-count" id="hero-page-count">${String(newIndex + 1).padStart(2, '0')} / ${String(heroes.length).padStart(2, '0')}</span>
-            </div>
-          `;
-        }
-        heroBody.innerHTML = `
-          <h1 class="hero-title" onclick="app.openArticleModal('${hero.id}')" style="cursor:pointer;" title="Read full story">${hero.title}</h1>
-          <p class="hero-desc">${hero.description}</p>
-          <div class="hero-meta-row">
-            <span>By <b>${hero.author}</b> · ${hero.readTime || ''} · Updated ${hero.published}</span>
-            <div class="hero-actions">
-              ${user ? `
-              <button class="icon-btn" onclick="app.toggleSaveArticle('${hero.id}', event)" title="Save" aria-label="Save story">
-                <i data-lucide="${this.isSaved(hero.id) ? 'bookmark-check' : 'bookmark'}"></i>
-              </button>` : ''}
-              <button class="icon-btn" onclick="app.openArticleModal('${hero.id}')" title="Read Full" aria-label="Read full story">
-                <i data-lucide="maximize-2"></i>
-              </button>
-            </div>
-          </div>
-        `;
-
-        container.querySelectorAll('.hero-dot').forEach((d, i) => d.classList.toggle('active', i === newIndex));
-
-        imgBox.style.opacity = '1';
-        heroBody.style.opacity = '1';
-        heroBody.style.transform = 'translateX(0)';
-        this.refreshIcons(container);
-      }, 220);
-    } else {
-      this.renderHero();
-    }
+    turningPage.addEventListener('animationend', onAnimationEnd);
+    void turningPage.offsetWidth;
+    turningPage.classList.add('is-turning');
+    const fallbackDuration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 180 : 600;
+    this.heroFlipTimer = setTimeout(finishFlip, fallbackDuration);
   }
 
   nextHeroStory(userTriggered) {
@@ -3471,9 +3495,10 @@ class GlobalCoverageApp {
       const field = document.getElementById(id);
       field.value = field.value.trim();
       values[key] = field.value;
-      if (key === 'phone') {
-        const digitCount = field.value.replace(/\D/g, '').length;
-        field.setCustomValidity(digitCount >= 7 && digitCount <= 15 ? '' : 'Enter a valid contact number with 7 to 15 digits.');
+      if (id === 'contact-phone') {
+        field.setCustomValidity(/^[0-9]{10}$/.test(field.value) ? '' : 'Enter a valid 10-digit contact number.');
+      } else if (id === 'adv-name') {
+        field.setCustomValidity(/^[A-Za-z ]+$/.test(field.value) ? '' : 'Enter a name using letters and spaces only.');
       }
     });
     if (!form.checkValidity()) {
@@ -3590,8 +3615,19 @@ class GlobalCoverageApp {
     else this.showToast(res.data?.error || 'Unable to create account.');
   }
   toggleMobileNav() {
-    document.getElementById('mobile-drawer').classList.toggle('show');
-    document.getElementById('mobile-drawer-overlay').classList.toggle('show');
+    const drawer = document.getElementById('mobile-drawer');
+    if (!drawer) return;
+    if (drawer.classList.contains('show')) {
+      this.closeMobileNav();
+      return;
+    }
+    drawer.classList.add('show');
+    document.getElementById('mobile-drawer-overlay')?.classList.add('show');
+  }
+
+  closeMobileNav() {
+    document.getElementById('mobile-drawer')?.classList.remove('show');
+    document.getElementById('mobile-drawer-overlay')?.classList.remove('show');
   }
 
   toggleProfileMenu() {

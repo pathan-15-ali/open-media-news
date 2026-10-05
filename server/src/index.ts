@@ -100,6 +100,7 @@ app.use('/api/events', eventsRouter);
 
 // Serve frontend static assets securely if present
 if (fs.existsSync(path.join(clientPath, 'index.html'))) {
+  app.use('/assets', express.static(path.join(clientPath, 'assets')));
   app.use('/css', express.static(path.join(clientPath, 'css')));
   app.use('/js', express.static(path.join(clientPath, 'js')));
   app.get(['/', '/index.html'], (req, res) => {

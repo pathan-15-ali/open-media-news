@@ -23,13 +23,15 @@
         <div class="container top-bar-inner">
             <div class="top-bar-left">
                 <span class="live-indicator"><span class="pulse-dot"></span><i data-lucide="radio-tower"></i><span class="live-label">LIVE UPDATES</span><span class="live-update-divider"></span><span id="live-update-message">Monitoring the global desk</span></span>
-                <span id="current-date"></span>
-                <span class="ist-clock" id="live-ist-clock"><i data-lucide="clock"></i> <span id="ist-clock-text">--:--:-- -- IST</span></span>
-                <span class="edition-tag">Global Edition</span>
             </div>
             <div class="top-bar-right">
+                <span class="edition-tag">Global Edition</span>
                 <span class="market-ticker-item">NASDAQ: <b class="text-emerald">+1.2%</b></span>
                 <span class="market-ticker-item">CYBER THREAT LEVEL: <b class="text-danger">ELEVATED</b></span>
+                <div class="top-bar-datetime">
+                    <span class="top-bar-date"><i data-lucide="calendar" aria-hidden="true"></i><span id="current-date"></span></span>
+                    <span class="ist-clock" id="live-ist-clock"><span class="analog-clock" aria-hidden="true"><span class="analog-clock-hand analog-clock-hour"></span><span class="analog-clock-hand analog-clock-minute"></span><span class="analog-clock-hand analog-clock-second"></span><span class="analog-clock-center"></span></span><span id="ist-clock-text">--:--:-- -- IST</span></span>
+                </div>
             </div>
         </div>
     </div>
@@ -38,8 +40,11 @@
     <header class="main-header" id="main-header">
         <div class="container header-inner">
             <a href="#home" class="brand-logo" onclick="event.preventDefault(); app.navigateTo('home')">
-                <div class="logo-icon"><i data-lucide="globe"></i></div>
-                <div class="logo-text">OPEN <span>MEDIA</span></div>
+                <div class="logo-icon" aria-hidden="true"><img src="assets/open-media-logo.png" alt=""></div>
+                <div class="logo-wordmark">
+                    <span class="logo-title">OPEN MEDIA</span>
+                    <span class="logo-tagline">S O X I T</span>
+                </div>
             </a>
 
             <nav class="desktop-nav" aria-label="Primary">
@@ -96,19 +101,29 @@
     <div class="mobile-drawer-overlay" id="mobile-drawer-overlay" onclick="app.toggleMobileNav()"></div>
     <div class="mobile-drawer" id="mobile-drawer" role="dialog" aria-modal="true" aria-label="Mobile navigation">
         <div class="drawer-header">
-            <div class="logo-text">OPEN <span>MEDIA</span></div>
+            <div class="brand-logo">
+                <div class="logo-icon" aria-hidden="true"><img src="assets/open-media-logo.png" alt=""></div>
+                <div class="logo-wordmark">
+                    <span class="logo-title">OPEN MEDIA</span>
+                    <span class="logo-tagline">S O X I T</span>
+                </div>
+            </div>
             <button class="icon-btn" onclick="app.toggleMobileNav()" aria-label="Close menu"><i data-lucide="x"></i></button>
         </div>
         <nav class="mobile-nav-links" aria-label="Mobile primary">
-            <a href="#home" class="mobile-nav-link" data-page="home" onclick="app.navigateTo('home'); app.toggleMobileNav();">Home</a>
-            <a href="#foryou" class="mobile-nav-link reader-only-nav" data-page="foryou" hidden onclick="app.navigateTo('foryou'); app.toggleMobileNav();">For You</a>
-            <a href="#business" class="mobile-nav-link" data-page="business" onclick="app.navigateTo('business'); app.toggleMobileNav();">Business</a>
-            <a href="#tech" class="mobile-nav-link" data-page="tech" onclick="app.navigateTo('tech'); app.toggleMobileNav();">IT</a>
-            <a href="#cyber" class="mobile-nav-link" data-page="cyber" onclick="app.navigateTo('cyber'); app.toggleMobileNav();">Cyber Security</a>
-            <a href="#ai" class="mobile-nav-link" data-page="ai" onclick="app.navigateTo('ai'); app.toggleMobileNav();">AI</a>
-            <a href="#publish" class="mobile-nav-link publisher-only-nav" data-page="publish" hidden onclick="app.navigateTo('publish'); app.toggleMobileNav();">Publish</a>
-            <a href="#admin" class="mobile-nav-link admin-only-nav" data-page="admin" hidden onclick="app.navigateTo('admin'); app.toggleMobileNav();">Admin Panel</a>
+            <a href="#home" class="mobile-nav-link" data-page="home" onclick="app.navigateTo('home')">Home</a>
+            <a href="#foryou" class="mobile-nav-link reader-only-nav" data-page="foryou" hidden onclick="app.navigateTo('foryou')">For You</a>
+            <a href="#business" class="mobile-nav-link" data-page="business" onclick="app.navigateTo('business')">Business</a>
+            <a href="#tech" class="mobile-nav-link" data-page="tech" onclick="app.navigateTo('tech')">IT</a>
+            <a href="#cyber" class="mobile-nav-link" data-page="cyber" onclick="app.navigateTo('cyber')">Cyber Security</a>
+            <a href="#ai" class="mobile-nav-link" data-page="ai" onclick="app.navigateTo('ai')">AI</a>
+            <a href="#publish" class="mobile-nav-link publisher-only-nav" data-page="publish" hidden onclick="app.navigateTo('publish')">Publish</a>
+            <a href="#admin" class="mobile-nav-link admin-only-nav" data-page="admin" hidden onclick="app.navigateTo('admin')">Admin Panel</a>
         </nav>
+        <div class="mobile-auth-actions auth-guest" aria-label="Account">
+            <button class="btn btn-outline btn-sm" type="button" onclick="app.closeMobileNav(); app.openAuthModal('login')">Login</button>
+            <button class="btn btn-primary btn-sm" type="button" onclick="app.closeMobileNav(); app.openAuthModal('register')">Register</button>
+        </div>
     </div>
 
     <!-- Breaking News Ticker -->
@@ -359,7 +374,7 @@
 
                 <div class="ai-page-hero">
                     <div class="card-editorial lead-story" id="ai-hero-story"></div>
-                    <div class="editor-picks-strip" id="ai-secondary-stories" style="grid-template-columns: 1fr; margin: 0;"></div>
+                    <div class="editor-picks-strip" id="ai-secondary-stories"></div>
                 </div>
 
                 <div class="filter-chip-bar" id="ai-filters">
@@ -419,7 +434,7 @@
 
                 <!-- SUBMIT ARTICLE -->
                 <div class="publish-panel active" id="publish-tab-article">
-                    <div class="panel-box" style="max-width:640px;">
+                    <div class="panel-box publisher-submission-card">
                         <h3 class="panel-title"><i data-lucide="pen-tool"></i> Article Submission</h3>
                         <form id="publisher-form" onsubmit="app.handleArticleSubmission(event)">
                             <div class="form-group">
@@ -469,7 +484,7 @@
 
                 <!-- SUBMIT EVENT -->
                 <div class="publish-panel" id="publish-tab-event">
-                    <div class="panel-box" style="max-width:640px;">
+                    <div class="panel-box publisher-submission-card">
                         <h3 class="panel-title"><i data-lucide="calendar-plus"></i> Event Submission</h3>
                         <form id="event-publisher-form" onsubmit="app.handleEventSubmission(event)">
                             <div class="form-group">
@@ -629,7 +644,7 @@
                         </div>
                         <div class="form-group">
                             <label for="contact-phone">Contact Number</label>
-                            <input type="tel" id="contact-phone" class="form-control" required minlength="7" maxlength="20" pattern="[+]?[0-9 ()-]+" inputmode="tel" autocomplete="tel" placeholder="e.g. +1 555 123 4567">
+                            <input type="tel" id="contact-phone" class="form-control" required minlength="10" maxlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="tel" placeholder="+91" oninput="this.value = this.value.replace(/[^0-9]/g, ''); this.setCustomValidity('')">
                         </div>
                         <div class="form-group">
                             <label for="contact-email">Email Address</label>
@@ -712,7 +727,7 @@
                     <form id="advertise-form" onsubmit="app.handleAdvertiseSubmission(event)" novalidate>
                         <div class="form-group">
                             <label for="adv-name">Full Name *</label>
-                            <input type="text" id="adv-name" class="form-control" required minlength="2" maxlength="80" placeholder="e.g. Alex Morgan">
+                            <input type="text" id="adv-name" class="form-control" required minlength="2" maxlength="80" pattern="[A-Za-z ]+" placeholder="e.g. Alex Morgan" oninput="this.value = this.value.replace(/[^A-Za-z ]/g, '')">
                         </div>
                         <div class="form-group">
                             <label for="adv-company">Company / Organization *</label>
@@ -1019,7 +1034,10 @@
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col brand-col">
-                    <div class="logo-text">OPEN <span>MEDIA</span></div>
+                    <div class="footer-brand-lockup">
+                        <div class="logo-icon" aria-hidden="true"><img src="assets/open-media-logo.png" alt=""></div>
+                        <div class="logo-text">OPEN <span>MEDIA</span></div>
+                    </div>
                     <p>OPEN MEDIA delivers worldwide technology, business, AI, and cybersecurity intelligence through trusted journalism, expert analysis, and industry insights.</p>
                 </div>
                 <div class="footer-col">
